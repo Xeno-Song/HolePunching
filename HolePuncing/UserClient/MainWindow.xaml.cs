@@ -22,13 +22,13 @@ namespace UserClient
     /// </summary>
     public partial class MainWindow : Window
     {
-        HolePunchingUdpClient holePunchingClient;
+        private HolePunchingUdpSocket holePunchingSocket;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            holePunchingClient = new HolePunchingUdpClient();
+            holePunchingSocket = new HolePunchingUdpSocket();
         }
 
         private void buttonConnect_Click(object sender, RoutedEventArgs e)
@@ -52,7 +52,7 @@ namespace UserClient
                 return;
             }
 
-            if (holePunchingClient.Connect(textBoxIp.Text, port) == false)
+            if (holePunchingSocket.Connect(textBoxIp.Text, port) == false)
             {
                 MessageBox.Show("Failed to connect socket. Check the IP address and port is valid",
                                 "Connection Failed",
@@ -61,7 +61,7 @@ namespace UserClient
                 return;
             }
 
-            if (holePunchingClient.Send("Hello World!") == false)
+            if (holePunchingSocket.Send("Hello World!") == false)
             {
                 MessageBox.Show("Failed to send data to target",
                                 "Failed",
@@ -74,6 +74,16 @@ namespace UserClient
         private void TextBoxNumberValidation(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !char.IsNumber(e.Text[0]);
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            holePunchingSocket.Dispose();
+        }
+
+        private void buttonDisconnect_Click(object sender, RoutedEventArgs e)
+        {
+            holePunchingSocket.Disconnect();
         }
     }
 }
