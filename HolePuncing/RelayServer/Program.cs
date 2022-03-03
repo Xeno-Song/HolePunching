@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RelayServer.HolePunching;
+using System;
 
 namespace RelayServer
 {
@@ -6,7 +7,8 @@ namespace RelayServer
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            HolePunchingServer server = new HolePunchingServer();
+            server.Main();
         }
     }
 }
