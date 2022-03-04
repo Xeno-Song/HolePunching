@@ -19,15 +19,20 @@ namespace RelayServer.HolePunching
             }
         }
         public bool Disposed { get; private set; }
+        public int ClientTimeout { get; set; }
         public event EventHandler<DataReceiveEventHandler> OnDataRecv;
+        public event EventHandler<HolePunchingClientInfo> OnTimeout;
 
         private Socket serverSocket;
         private Thread recvThread;
-           
+        private List<HolePunchingClientInfo> clientInfoList;
+
         public HolePunchingUdpServer()
         {
             serverSocket = null;
             recvThread = null;
+            clientInfoList = new List<HolePunchingClientInfo>();
+            ClientTimeout = 10000;
         }
 
         public bool Bind(short port)
@@ -70,12 +75,39 @@ namespace RelayServer.HolePunching
                     IPEndPoint remoteEndPoint = endPoint as IPEndPoint;
                     List<byte> recvData = new List<byte>(buffer);
                     recvData.RemoveRange(dataSize, recvData.Count - dataSize);
-                    
+
+                    HolePunchingClientInfo clientInfo = new HolePunchingClientInfo(
+                        remoteEndPoint.Address.ToString(), remoteEndPoint.Port);
+
+                    bool foundClientInfo = false;
+                    foreach (var clientInfoIter in clientInfoList)
+                    {
+                        if (clientInfo == clientInfoIter)
+                        {
+                            clientInfoIter.RenewAliveTime();
+                            foundClientInfo = true;
+                            break;
+                        }
+                    }
+
+                    if (foundClientInfo == false)
+                        clientInfoList.Add(clientInfo);
+
                     DataReceiveEventHandler eventArgs = new DataReceiveEventHandler(
-                        remoteEndPoint.Address.ToString(), remoteEndPoint.Port, recvData);
+                        clientInfo, recvData);
                     OnDataRecv?.Invoke(this, eventArgs);
 
                     asyncResult = null;
+                }
+
+                for (int i = 0; i < clientInfoList.Count; i++)
+                {
+                    if (clientInfoList[i].LastAliveElapsed.TotalMilliseconds >= ClientTimeout)
+                    {
+                        OnTimeout?.Invoke(this, clientInfoList[i]);
+                        clientInfoList.RemoveAt(i);
+                        --i;
+                    }
                 }
             }
         }

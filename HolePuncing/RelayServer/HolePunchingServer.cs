@@ -17,6 +17,7 @@ namespace RelayServer
         {
             HolePunchingUdpServer server = new HolePunchingUdpServer();
             server.OnDataRecv += ClientConnectionEventHandler;
+            server.OnTimeout += ClientConnectionTimeout;
             server.Bind(4312);
 
             while (true)
@@ -30,8 +31,13 @@ namespace RelayServer
 
         void ClientConnectionEventHandler(object sender, DataReceiveEventHandler eventArgs)
         {
-            Console.WriteLine("Client data received : " + eventArgs.IpAddress + ":" + eventArgs.Port);
+            Console.WriteLine("Client data received : " + eventArgs.ClientInfo.IpAddress + ":" + eventArgs.ClientInfo.Port);
             Console.WriteLine(Encoding.ASCII.GetString(eventArgs.Data.ToArray()));
+        }
+
+        void ClientConnectionTimeout(object sender, HolePunchingClientInfo clientInfo)
+        {
+            Console.WriteLine("Client Timeout : " + clientInfo.IpAddress + ":" + clientInfo.Port);
         }
     }
 }
